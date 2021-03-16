@@ -34,7 +34,8 @@ const runQuestions = () => {
       "View all departments",
       "View all roles",
       "View all employees",
-      "Add new department"
+      "Add new department",
+      "Add new role",
     ],
   })
   //switch cases for every possible action
@@ -67,12 +68,16 @@ const runQuestions = () => {
   });
 };
 
+// prompts the user for information on the department they wish to add and adds it to the table departments
 const addDept = () => {
   inquirer
   .prompt({
     name: 'deptName',
     type: 'input',
     message: "What is the departments name?",
+    validate: function validateDeptName(DeptName){
+      return DeptName !== '';
+    },
   })
   .then((userAnswer) => {
 
@@ -93,7 +98,59 @@ const addDept = () => {
     console.log(query.sql);
 
   })
+};
 
+// questions for adding new role had to put into array because it wouldnt work within the prompt for some reason
+const addRoleQuestions = [
+  {
+    name: 'roleName',
+    type: 'input',
+    message: "What is the new role?",
+    validate: function validateRoleName(roleName){
+      return roleName !== '';
+    },
+  },
+  {
+    name: 'roleSalary',
+    type: 'input',
+    message: 'What is the salary for this new role?',
+    validate: function validateRoleSalary(roleSalary){
+      return roleSalary !== '';
+    },
+  },
+  {
+    name: 'roleDept',
+    type: 'input',
+    message: "What department does this role fall under?",
+    validate: function validateRoleDept(roleDept){
+      return roleDept !== '';
+    },
+  },
+];
+
+// prompts the user for information on the role they wish to add and adds it to the table role
+const addRole = () => {
+  inquirer.prompt(addRoleQuestions)
+  .then((userAnswer) => {
+    console.log('Inserting a new role...\n');
+    const query = connection.query(
+      'INSERT INTO role SET ?',
+      {
+        title: userAnswer.roleName,
+        salary: userAnswer.roleSalary,
+        department_id: userAnswer.roleDept,
+      },
+      (err, res) => {
+        if (err) throw err;
+        console.log(`${res.affectedRows} department inserted!\n`);
+        // Call runQuestions() AFTER the INSERT completes
+        runQuestions();
+      }
+    );
+    // logs the actual query being run
+    console.log(query.sql);
+
+  })
 };
 
 // shows all the departments
