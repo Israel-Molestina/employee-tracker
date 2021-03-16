@@ -3,16 +3,7 @@ const inquirer = require('inquirer');
 const cTable = require('console.table');
 const Choice = require('inquirer/lib/objects/choice');
 
-// console.table([
-//   {
-//     name: 'foo',
-//     age: 10
-//   }, {
-//     name: 'bar',
-//     age: 20
-//   }
-// ]);
-
+// starts connection to mysql
 const connection = mysql.createConnection({
   host: 'localhost',
 
@@ -29,10 +20,11 @@ const connection = mysql.createConnection({
 
 connection.connect((err) => {
   if (err) throw err;
-  runSearch();
+  runQuestions();
 });
 
-const runSearch = () => {
+// prompts the user for an action to take
+const runQuestions = () => {
   inquirer
   .prompt({
     name: 'action',
@@ -42,9 +34,10 @@ const runSearch = () => {
       "View all departments",
       "View all roles",
       "View all employees",
-      
+      "Add new department"
     ],
   })
+  //switch cases for every possible action
   .then((userChoice) => {
     switch (userChoice.action) {
       case "View all departments":
@@ -58,33 +51,77 @@ const runSearch = () => {
       case "View all employees":
         showEmployees();
         break;
+
+      case "Add new department":
+        addDept();
+        break;
+
+      case "Add new role":
+        addRole();
+        break;
+
+      case "Add new employee":
+        addEmployee();
+        break;
     }
   });
 };
 
+const addDept = () => {
+  inquirer
+  .prompt({
+    name: 'deptName',
+    type: 'input',
+    message: "What is the departments name?",
+  })
+  .then((userAnswer) => {
+
+    console.log('Inserting a new department...\n');
+    const query = connection.query(
+      'INSERT INTO department SET ?',
+      {
+        name: userAnswer.deptName,
+      },
+      (err, res) => {
+        if (err) throw err;
+        console.log(`${res.affectedRows} department inserted!\n`);
+        // Call runQuestions() AFTER the INSERT completes
+        runQuestions();
+      }
+    );
+    // logs the actual query being run
+    console.log(query.sql);
+
+  })
+
+};
+
+// shows all the departments
 const showDepts = () => {
   const query =
     'SELECT * FROM department';
   connection.query(query, (err, res) => {
     console.table(res);
-    runSearch();
+    runQuestions();
   });
 };
 
+// shows all the roles
 const showRoles = () => {
   const query =
     'SELECT * FROM role';
   connection.query(query, (err, res) => {
     console.table(res);
-    runSearch();
+    runQuestions();
   });
 };
 
+// shows all the employees
 const showEmployees = () => {
   const query =
     'SELECT * FROM employee';
   connection.query(query, (err, res) => {
     console.table(res);
-    runSearch();
+    runQuestions();
   });
 };
