@@ -1,7 +1,67 @@
 const mysql = require('mysql');
 const inquirer = require('inquirer');
 const cTable = require('console.table');
-const Choice = require('inquirer/lib/objects/choice');
+
+// questions for adding new role had to put into array because it wouldnt work within the prompt for some reason
+const addRoleQuestions = [
+  {
+    name: 'roleName',
+    type: 'input',
+    message: "What is the new role?",
+    validate: function validateRoleName(roleName){
+      return roleName !== '';
+    },
+  },
+  {
+    name: 'roleSalary',
+    type: 'input',
+    message: "What is the salary for this new role?",
+    validate: function validateRoleSalary(roleSalary){
+      return roleSalary !== '';
+    },
+  },
+  {
+    name: 'roleDept',
+    type: 'input',
+    message: "What department does this role fall under?",
+    validate: function validateRoleDept(roleDept){
+      return roleDept !== '';
+    },
+  },
+];
+
+// questions for adding new employee had to put into array because it wouldnt work within the prompt for some reason
+const addEmpQuestions = [
+  {
+    name: 'firstName',
+    type: 'input',
+    message: "What is the employees first name?",
+    validate: function validateFirstName(FirstName){
+      return FirstName !== '';
+    },
+  },
+  {
+    name: 'lastName',
+    type: 'input',
+    message: "What is the employees last name?",
+    validate: function validateLastName(LastName){
+      return LastName !== '';
+    },
+  },
+  {
+    name: 'empRole',
+    type: 'input',
+    message: "What role will this employee be performing?",
+    validate: function validateEmpRole(EmpRole){
+      return EmpRole !== '';
+    },
+  },
+  {
+    name: 'empManager',
+    type: 'input',
+    message: "Who is this employees manager?",
+  },
+];
 
 // starts connection to mysql
 const connection = mysql.createConnection({
@@ -36,6 +96,7 @@ const runQuestions = () => {
       "View all employees",
       "Add new department",
       "Add new role",
+      "Add new employee",
     ],
   })
   //switch cases for every possible action
@@ -100,34 +161,6 @@ const addDept = () => {
   })
 };
 
-// questions for adding new role had to put into array because it wouldnt work within the prompt for some reason
-const addRoleQuestions = [
-  {
-    name: 'roleName',
-    type: 'input',
-    message: "What is the new role?",
-    validate: function validateRoleName(roleName){
-      return roleName !== '';
-    },
-  },
-  {
-    name: 'roleSalary',
-    type: 'input',
-    message: 'What is the salary for this new role?',
-    validate: function validateRoleSalary(roleSalary){
-      return roleSalary !== '';
-    },
-  },
-  {
-    name: 'roleDept',
-    type: 'input',
-    message: "What department does this role fall under?",
-    validate: function validateRoleDept(roleDept){
-      return roleDept !== '';
-    },
-  },
-];
-
 // prompts the user for information on the role they wish to add and adds it to the table role
 const addRole = () => {
   inquirer.prompt(addRoleQuestions)
@@ -139,6 +172,32 @@ const addRole = () => {
         title: userAnswer.roleName,
         salary: userAnswer.roleSalary,
         department_id: userAnswer.roleDept,
+      },
+      (err, res) => {
+        if (err) throw err;
+        console.log(`${res.affectedRows} department inserted!\n`);
+        // Call runQuestions() AFTER the INSERT completes
+        runQuestions();
+      }
+    );
+    // logs the actual query being run
+    console.log(query.sql);
+
+  })
+};
+
+// prompts the user for information on the employee they wish to add and adds it to the table employee
+const addEmployee = () => {
+  inquirer.prompt(addEmpQuestions)
+  .then((userAnswer) => {
+    console.log('Inserting a new employee...\n');
+    const query = connection.query(
+      'INSERT INTO employee SET ?',
+      {
+        first_name: userAnswer.firstName,
+        last_name: userAnswer.lastName,
+        role_id: userAnswer.empRole,
+        manager_id: userAnswer.empManager,
       },
       (err, res) => {
         if (err) throw err;
