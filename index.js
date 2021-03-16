@@ -56,8 +56,8 @@ const runSearch = () => {
         break;
 
       case "View all employees":
-          showEmployees();
-          break;
+        showEmployees();
+        break;
     }
   });
 };
@@ -65,6 +65,24 @@ const runSearch = () => {
 const showDepts = () => {
   const query =
     'SELECT * FROM department';
+  connection.query(query, (err, res) => {
+    console.table(res);
+    runSearch();
+  });
+};
+
+const showRoles = () => {
+  const query =
+    'SELECT * FROM role';
+  connection.query(query, (err, res) => {
+    console.table(res);
+    runSearch();
+  });
+};
+
+const showEmployees = () => {
+  const query =
+    'SELECT * FROM employee';
   connection.query(query, (err, res) => {
     console.table(res);
     runSearch();
