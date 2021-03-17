@@ -2,7 +2,6 @@ const mysql = require("mysql");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
 
-
 // starts connection to mysql
 const connection = mysql.createConnection({
   host: "localhost",
@@ -82,7 +81,7 @@ const addDept = () => {
     })
     .then((userAnswer) => {
       console.log("Inserting a new department...\n");
-      const query = connection.query(
+      let query = connection.query(
         "INSERT INTO department SET ?",
         {
           name: userAnswer.deptName,
@@ -101,6 +100,15 @@ const addDept = () => {
 
 // prompts the user for information on the role they wish to add and adds it to the table role
 const addRole = () => {
+  let departments = [];
+
+  let query = "SELECT name FROM department";
+  connection.query(query, (err, res) => {
+    for (var i = 0; i < res.length; i++) {
+      departments.push(res[i]);
+    }
+  });
+
   inquirer
     .prompt([
       {
@@ -121,16 +129,22 @@ const addRole = () => {
       },
       {
         name: "roleDept",
-        type: "input",
+        type: "list",
         message: "What department does this role fall under?",
-        validate: function validateRoleDept(roleDept) {
-          return roleDept !== "";
-        },
+        choices: departments,
       },
     ])
     .then((userAnswer) => {
+      // let selection = userAnswer.roleDept;
+      // let query = "SELECT department_id FROM department WHERE name = ?";
+      // connection.query(query, (err, res) => {
+      //   for (var i = 0; i < res.length; i++) {
+      //     departments.push(res[i].name);
+      //   }
+      // });
+
       console.log("Inserting a new role...\n");
-      const query = connection.query(
+      let query = connection.query(
         "INSERT INTO role SET ?",
         {
           title: userAnswer.roleName,
@@ -151,6 +165,16 @@ const addRole = () => {
 
 // prompts the user for information on the employee they wish to add and adds it to the table employee
 const addEmployee = () => {
+
+  // let roles = [];
+
+  // let query = "SELECT * FROM roles";
+  // connection.query(query, (err, res) => {
+  //   for (var i = 0; i < res.length; i++) {
+  //     departments.push(res[i].name);
+  //   }
+  // });
+
   inquirer
     .prompt([
       {
@@ -185,7 +209,7 @@ const addEmployee = () => {
     ])
     .then((userAnswer) => {
       console.log("Inserting a new employee...\n");
-      const query = connection.query(
+      let query = connection.query(
         "INSERT INTO employee SET ?",
         {
           first_name: userAnswer.firstName,
@@ -207,8 +231,9 @@ const addEmployee = () => {
 
 // shows all the departments
 const showDepts = () => {
-  const query = "SELECT * FROM department";
+  let query = "SELECT * FROM department";
   connection.query(query, (err, res) => {
+    console.log(res);
     console.table(res);
     runQuestions();
   });
@@ -216,7 +241,7 @@ const showDepts = () => {
 
 // shows all the roles
 const showRoles = () => {
-  const query = "SELECT * FROM role";
+  let query = "SELECT * FROM role";
   connection.query(query, (err, res) => {
     console.table(res);
     runQuestions();
@@ -225,7 +250,7 @@ const showRoles = () => {
 
 // shows all the employees
 const showEmployees = () => {
-  const query = "SELECT * FROM employee";
+  let query = "SELECT * FROM employee";
   connection.query(query, (err, res) => {
     console.table(res);
     runQuestions();
