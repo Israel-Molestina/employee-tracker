@@ -68,7 +68,9 @@ const runQuestions = () => {
     });
 };
 
-// prompts the user for information on the department they wish to add and adds it to the table departments
+//----------------------------------------------------------------------------------
+// -----------------------------------------ADD DEPARTMENT--------------------------
+// ---------------------------------------------------------------------------------
 const addDept = () => {
   inquirer
     .prompt({
@@ -98,12 +100,15 @@ const addDept = () => {
     });
 };
 
-// prompts the user for information on the role they wish to add and adds it to the table role
+//----------------------------------------------------------------------------------
+// -----------------------------------------ADD ROLE--------------------------------
+// ---------------------------------------------------------------------------------
 const addRole = () => {
-  let departments = [];
 
-  let query = "SELECT name FROM department";
-  connection.query(query, (err, res) => {
+  // selecting all department names to use in inquirer prompt
+  let departments = [];
+  let queryDept = "SELECT name FROM department";
+  connection.query(queryDept, (err, res) => {
     for (var i = 0; i < res.length; i++) {
       departments.push(res[i]);
     }
@@ -135,45 +140,67 @@ const addRole = () => {
       },
     ])
     .then((userAnswer) => {
-      // let selection = userAnswer.roleDept;
-      // let query = "SELECT department_id FROM department WHERE name = ?";
-      // connection.query(query, (err, res) => {
-      //   for (var i = 0; i < res.length; i++) {
-      //     departments.push(res[i].name);
-      //   }
-      // });
 
-      console.log("Inserting a new role...\n");
-      let query = connection.query(
-        "INSERT INTO role SET ?",
-        {
-          title: userAnswer.roleName,
-          salary: userAnswer.roleSalary,
-          department_id: userAnswer.roleDept,
-        },
-        (err, res) => {
-          if (err) throw err;
-          console.log(`${res.affectedRows} department inserted!\n`);
-          // Call runQuestions() AFTER the INSERT completes
-          runQuestions();
-        }
-      );
-      // logs the actual query being run
-      console.log(query.sql);
+      // Getting the id of the department based on user selection
+      let userSelection = userAnswer.roleDept;
+      connection.query(`SELECT department_id FROM department WHERE name = "${userSelection}"`, (err, res) => {
+        let userDept = res[0].department_id;
+        if (err) throw err;
+
+
+        // inserting new role into role table
+        console.log("Inserting a new role...\n");
+        let query = connection.query(
+          "INSERT INTO role SET ?",
+          {
+            title: userAnswer.roleName,
+            salary: userAnswer.roleSalary,
+            department_id: userDept,
+          },
+          (err, res) => {
+            if (err) throw err;
+            console.log(`${res.affectedRows} department inserted!\n`);
+            // Call runQuestions() AFTER the INSERT completes
+            runQuestions();
+          }
+        );
+        // logs the actual query being run
+        console.log(query.sql);
+      });
+      
     });
 };
 
-// prompts the user for information on the employee they wish to add and adds it to the table employee
+
+
+//----------------------------------------------------------------------------------
+// -----------------------------------------ADD EMPLOYEE--------------------------------
+// ---------------------------------------------------------------------------------
 const addEmployee = () => {
 
-  // let roles = [];
+  let roles = [];
+  let employees = [];
+  let employeeNames = [];
 
-  // let query = "SELECT * FROM roles";
-  // connection.query(query, (err, res) => {
-  //   for (var i = 0; i < res.length; i++) {
-  //     departments.push(res[i].name);
-  //   }
-  // });
+  // slecting all roles to use in inquirer prompt
+  let queryRole = "SELECT title FROM role";
+  connection.query(queryRole, (err, res) => {
+    for (var i = 0; i < res.length; i++) {
+      roles.push(res[i].title);
+    }
+
+  });
+  
+  // slecting all employees to use in inquirer prompt
+  let queryEmp = "SELECT employee_id, CONCAT(first_name, ' ', last_name) AS full_name FROM employee";
+  connection.query(queryEmp, (err, res) => {
+    for (var i = 0; i < res.length; i++) {
+      employees.push(res[i]);
+      employeeNames.push(res[i].full_name)
+    }
+
+
+  });
 
   inquirer
     .prompt([
@@ -195,26 +222,40 @@ const addEmployee = () => {
       },
       {
         name: "empRole",
-        type: "input",
+        type: "list",
         message: "What role will this employee be performing?",
-        validate: function validateEmpRole(EmpRole) {
-          return EmpRole !== "";
-        },
+        choices: roles,
       },
       {
         name: "empManager",
-        type: "input",
+        type: "list",
         message: "Who is this employees manager?",
+        choices: employeeNames,
       },
     ])
     .then((userAnswer) => {
+
+
+      // Getting the title of the role based on user selection
+      let userSelection = userAnswer.empRole;
+      connection.query(`SELECT role_id FROM role WHERE title = "${userSelection}"`, (err, res) => {
+        let userRole = res[0].role_id;
+        if (err) throw err;
+
+        employees.forEach(employee => {
+          if (employee.full_name.includes(userAnswer.empManager)) {
+            userAnswer.empManager = employee.employee_id
+          }
+        }) 
+
+
       console.log("Inserting a new employee...\n");
       let query = connection.query(
         "INSERT INTO employee SET ?",
         {
           first_name: userAnswer.firstName,
           last_name: userAnswer.lastName,
-          role_id: userAnswer.empRole,
+          role_id: userRole,
           manager_id: userAnswer.empManager,
         },
         (err, res) => {
@@ -227,30 +268,38 @@ const addEmployee = () => {
       // logs the actual query being run
       console.log(query.sql);
     });
+  });
 };
 
-// shows all the departments
+//----------------------------------------------------------------------------------
+// -----------------------------------------SHOW DEPARTMENTS------------------------
+// ---------------------------------------------------------------------------------
 const showDepts = () => {
-  let query = "SELECT * FROM department";
+  let query = "SELECT department_id AS id, name FROM department";
   connection.query(query, (err, res) => {
-    console.log(res);
     console.table(res);
     runQuestions();
   });
 };
 
-// shows all the roles
+
+//----------------------------------------------------------------------------------=≠
+// -----------------------------------------SHOW ROLES------------------------------
+// ---------------------------------------------------------------------------------
 const showRoles = () => {
-  let query = "SELECT * FROM role";
+  let query = "SELECT role_id AS id, title, salary,  department.name AS department FROM role LEFT JOIN department ON role.department_id = department.department_id";
   connection.query(query, (err, res) => {
     console.table(res);
     runQuestions();
   });
 };
 
-// shows all the employees
+
+//----------------------------------------------------------------------------------
+// -----------------------------------------SHOW ------------------------
+// ---------------------------------------------------------------------------------
 const showEmployees = () => {
-  let query = "SELECT * FROM employee";
+  let query = "SELECT employee.employee_id AS id, CONCAT(employee.first_name, ' ', employee.last_name) AS employee, role.title AS role, department.name AS department, role.salary AS salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager FROM employee LEFT JOIN role ON employee.role_id = role.role_id LEFT JOIN employee manager ON employee.manager_id = manager.employee_id LEFT JOIN department ON employee.role_id = department.department_id;";
   connection.query(query, (err, res) => {
     console.table(res);
     runQuestions();
