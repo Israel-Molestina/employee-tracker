@@ -76,7 +76,7 @@ const runQuestions = () => {
           deleteDept();
           break;
 
-        case "Update role":
+        case "Delete role":
           deleteRole();
           break;
 
@@ -87,21 +87,66 @@ const runQuestions = () => {
     });
 };
 
+//----------------------------------------------------------------------------------
+// -----------------------------DELETING ROLE---------------------------------------
+// ---------------------------------------------------------------------------------
+const deleteRole = () => {
+  let roleNames = [];
+  let roles = [];
+
+  // selecting all department names to use in inquirer prompt
+  let queryDept = "SELECT title, role_id AS id FROM role";
+  connection.query(queryDept, (err, res) => {
+    for (var i = 0; i < res.length; i++) {
+      roleNames.push(res[i].title);
+      roles.push(res[i]);
+    }
+
+    inquirer
+      .prompt({
+        name: "role",
+        type: "list",
+        message: "Which role would you like to delete?",
+        choices: roleNames,
+      })
+      .then((userChoice) => {
+        //gets the id of the department based on the user selection
+        roles.forEach((role) => {
+          if (role.title.includes(userChoice.role)) {
+            userChoice.role = role.id;
+          }
+        });
+
+        console.log("Deleting Role...\n");
+        connection.query(
+          "DELETE FROM role WHERE ?",
+          {
+            role_id: userChoice.role,
+          },
+          (err, res) => {
+            if (err) throw err;
+            console.log(`${res.affectedRows} role deleted!\n`);
+            // Call runQuestions AFTER the DELETE completes
+            runQuestions();
+          }
+        );
+      });
+  });
+};
 
 //----------------------------------------------------------------------------------
 // -----------------------------DELETING DEPARTMENT---------------------------------
 // ---------------------------------------------------------------------------------
 const deleteDept = () => {
-
   let departmentNames = [];
   let departments = [];
-  
+
   // selecting all department names to use in inquirer prompt
   let queryDept = "SELECT name, department_id AS id FROM department";
   connection.query(queryDept, (err, res) => {
     for (var i = 0; i < res.length; i++) {
       departmentNames.push(res[i].name);
-      departments.push(res[i])
+      departments.push(res[i]);
     }
 
     inquirer
@@ -112,18 +157,17 @@ const deleteDept = () => {
         choices: departmentNames,
       })
       .then((userChoice) => {
-
         //gets the id of the department based on the user selection
         departments.forEach((department) => {
           if (department.name.includes(userChoice.dept)) {
             userChoice.dept = department.id;
-          };
+          }
         });
-        console.log(userChoice.dept)
-        
-        console.log('Deleting department...\n');
+        console.log(userChoice.dept);
+
+        console.log("Deleting department...\n");
         connection.query(
-          'DELETE FROM department WHERE ?',
+          "DELETE FROM department WHERE ?",
           {
             department_id: userChoice.dept,
           },
@@ -134,14 +178,9 @@ const deleteDept = () => {
             runQuestions();
           }
         );
-  
-      })
+      });
   });
-  
-
-}
-
-
+};
 
 //----------------------------------------------------------------------------------
 // -----------------------------UPDATE EMPLOYEE (CHOOSING EMPLOYEE)-----------------
