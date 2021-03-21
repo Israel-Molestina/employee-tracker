@@ -43,6 +43,7 @@ const runQuestions = () => {
         "View employees by manager",
         "View employees by department",
         "View employees by role",
+        "View total utilized budget of a department",
       ],
     })
     //switch cases for every possible action
@@ -99,9 +100,59 @@ const runQuestions = () => {
         case "View employees by role":
           viewEmpByRole();
           break;
+
+        case "View total utilized budget of a department":
+          viewSalaryByDept();
+          break;
       }
     });
 };
+
+
+
+
+//----------------------------------------------------------------------------------
+// ---------------------SHOW SALARY BY DEPARTMENT---------------------------------
+// ---------------------------------------------------------------------------------
+const viewSalaryByDept = () => {
+  let deptNames = [];
+  let departments = [];
+
+  // slecting all department
+  let queryDept = "SELECT department_id AS id, name FROM department;";
+  connection.query(queryDept, (err, res) => {
+    for (var i = 0; i < res.length; i++) {
+      deptNames.push(res[i].name);
+      departments.push(res[i]);
+    }
+
+    inquirer
+      .prompt({
+        name: "dept",
+        type: "list",
+        message: "Which department's employees would you like to view?",
+        choices: deptNames,
+      })
+      .then((userChoice) => {
+        //gets the id of the manager based on the user selection
+        departments.forEach((department) => {
+          if (department.name === userChoice.dept) {
+            userChoice.dept = department.id;
+          }
+        });
+
+        // shows all employees with a department id matching the department selected
+        let query = `SELECT SUM(role.salary) AS budget FROM employee LEFT JOIN role ON employee.role_id = role.role_id LEFT JOIN department ON role.department_id = department.department_id WHERE role.department_id = ${userChoice.dept};`;
+        connection.query(query, (err, res) => {
+          console.table(res);
+          runQuestions();
+        });
+      });
+  });
+};
+
+
+
 
 
 
@@ -790,7 +841,7 @@ const showEmployees = () => {
   let query =
     "SELECT employee.employee_id AS id, CONCAT(employee.first_name, ' ', employee.last_name) AS employee, role.title AS role, department.name AS department, role.salary AS salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager FROM employee LEFT JOIN role ON employee.role_id = role.role_id LEFT JOIN employee manager ON employee.manager_id = manager.employee_id LEFT JOIN department ON role.department_id = department.department_id;";
   connection.query(query, (err, res) => {
-    console.table(res);
+    console.table(res); 
     runQuestions();
   });
 };
