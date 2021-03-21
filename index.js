@@ -1,7 +1,7 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
-require('dotenv').config();
+require("dotenv").config();
 
 // starts connection to mysql
 const connection = mysql.createConnection({
@@ -40,6 +40,7 @@ const runQuestions = () => {
         "Delete department",
         "Delete role",
         "Remove employee",
+        "View employees by manager",
       ],
     })
     //switch cases for every possible action
@@ -84,19 +85,76 @@ const runQuestions = () => {
         case "Remove employee":
           deleteEmployee();
           break;
+
+        case "View employees by manager":
+          viewEmpByManager();
+          break;
       }
     });
 };
 
 //----------------------------------------------------------------------------------
-// -----------------------------DELETING EMPLOYEE---------------------------------------
+// ---------------------SHOW EMPLOYEE BY MANAGER (CHOOSING MANAGER)--------------------
+// ---------------------------------------------------------------------------------
+const viewEmpByManager = () => {
+  let managerIds = [];
+  let employees = [];
+
+  // slecting all manager ids to use in select all managers query
+  let queryEmp =
+    "SELECT CONCAT(first_name, ' ', last_name) AS full_name, manager_id AS manager_id, employee_id FROM employee;";
+  connection.query(queryEmp, (err, res) => {
+    for (var i = 0; i < res.length; i++) {
+      employees.push(res[i]);
+      if (res[i].manager_id !== null) {
+        managerIds.push(res[i].manager_id);
+      }
+    }
+
+    let managerNames = [];
+
+    // slecting the managers based on the manager numbers
+    let queryMan = `SELECT CONCAT(first_name, ' ', last_name) AS full_name FROM employee WHERE employee_id IN (${managerIds});`;
+    connection.query(queryMan, (err, res) => {
+      for (var i = 0; i < res.length; i++) {
+        managerNames.push(res[i].full_name);
+      }
+
+      inquirer
+        .prompt({
+          name: "manager",
+          type: "list",
+          message: "Whos team would you like to veiw?",
+          choices: managerNames,
+        })
+        .then((userChoice) => {
+
+          //gets the id of the department based on the user selection
+          employees.forEach((employee) => {
+            if (employee.full_name.includes(userChoice.manager)) {
+              userChoice.manager = employee.employee_id;
+            }
+          });
+
+          let query = `SELECT employee.employee_id AS id, CONCAT(employee.first_name, ' ', employee.last_name) AS employee, role.title AS role, department.name AS department, role.salary AS salary FROM employee LEFT JOIN role ON employee.role_id = role.role_id LEFT JOIN employee manager ON employee.manager_id = manager.employee_id LEFT JOIN department ON role.department_id = department.department_id WHERE employee.manager_id = ${userChoice.manager};`;
+          connection.query(query, (err, res) => {
+            console.table(res)
+          })
+        });
+    });
+  });
+};
+
+//----------------------------------------------------------------------------------
+// -----------------------------DELETING EMPLOYEE-----------------------------------
 // ---------------------------------------------------------------------------------
 const deleteEmployee = () => {
   let employees = [];
   let employeeNames = [];
 
   // slecting all employees to use in inquirer prompt
-  let queryEmp = "SELECT CONCAT(first_name, ' ', last_name) AS full_name, employee_id AS id FROM employee;";
+  let queryEmp =
+    "SELECT CONCAT(first_name, ' ', last_name) AS full_name, employee_id AS id FROM employee;";
   connection.query(queryEmp, (err, res) => {
     for (var i = 0; i < res.length; i++) {
       employees.push(res[i]);
@@ -270,18 +328,10 @@ const empAspect = (userSelectedEmp, employees) => {
       name: "empAspect",
       type: "list",
       message: "What aspect of the employee would you like to update?",
-      choices: ["First name", "Last name", "Role", "Manager"],
+      choices: ["Role", "Manager"],
     })
     .then((userChoice) => {
       switch (userChoice.empAspect) {
-        case "First name":
-          empFirstName(userSelectedEmp);
-          break;
-
-        case "Last name":
-          empLastName(userSelectedEmp);
-          break;
-
         case "Role":
           empRole(userSelectedEmp, employees);
           break;
