@@ -42,6 +42,7 @@ const runQuestions = () => {
         "Remove employee",
         "View employees by manager",
         "View employees by department",
+        "View employees by role",
       ],
     })
     //switch cases for every possible action
@@ -94,18 +95,68 @@ const runQuestions = () => {
         case "View employees by department":
           viewEmpByDept();
           break;
+
+        case "View employees by role":
+          viewEmpByRole();
+          break;
       }
     });
 };
 
+
+
 //----------------------------------------------------------------------------------
-// ---------------------SHOW EMPLOYEE BY DEPARTMENT------------------------------------
+// ---------------------SHOW EMPLOYEE BY ROLE---------------------------------------
+// ---------------------------------------------------------------------------------
+const viewEmpByRole = () => {
+  let roleNames = [];
+  let roles = [];
+
+  // slecting all roles
+  let queryRole = "SELECT role_id AS id, title FROM role;";
+  connection.query(queryRole, (err, res) => {
+    for (var i = 0; i < res.length; i++) {
+      roleNames.push(res[i].title);
+      roles.push(res[i]);
+    }
+
+    inquirer
+      .prompt({
+        name: "role",
+        type: "list",
+        message: "Which role's employees would you like to view?",
+        choices: roleNames,
+      })
+      .then((userChoice) => {
+        //gets the id of the manager based on the user selection
+        roles.forEach((role) => {
+          if (role.title === userChoice.role) {
+            userChoice.role = role.id;
+          }
+        });
+
+        // shows all employees with a role id matching the role selected
+        let query = `SELECT employee.employee_id AS id, CONCAT(employee.first_name, ' ', employee.last_name) AS employee, department.name AS department, CONCAT(manager.first_name, ' ', manager.last_name) AS manager, role.salary AS salary FROM employee LEFT JOIN role ON employee.role_id = role.role_id LEFT JOIN employee manager ON employee.manager_id = manager.employee_id LEFT JOIN department ON role.department_id = department.department_id WHERE role.role_id = ${userChoice.role};`;
+        connection.query(query, (err, res) => {
+          console.table(res);
+          runQuestions();
+        });
+      });
+  });
+};
+
+
+
+
+
+//----------------------------------------------------------------------------------
+// ---------------------SHOW EMPLOYEE BY DEPARTMENT---------------------------------
 // ---------------------------------------------------------------------------------
 const viewEmpByDept = () => {
   let deptNames = [];
   let departments = [];
 
-  // slecting all department departmnets
+  // slecting all department
   let queryDept = "SELECT department_id AS id, name FROM department;";
   connection.query(queryDept, (err, res) => {
     for (var i = 0; i < res.length; i++) {
@@ -123,7 +174,7 @@ const viewEmpByDept = () => {
       .then((userChoice) => {
         //gets the id of the manager based on the user selection
         departments.forEach((department) => {
-          if (department.name.includes(userChoice.dept)) {
+          if (department.name === userChoice.dept) {
             userChoice.dept = department.id;
           }
         });
@@ -175,7 +226,7 @@ const viewEmpByManager = () => {
         .then((userChoice) => {
           //gets the id of the manager based on the user selection
           employees.forEach((employee) => {
-            if (employee.full_name.includes(userChoice.manager)) {
+            if (employee.full_name === userChoice.manager) {
               userChoice.manager = employee.employee_id;
             }
           });
@@ -215,9 +266,9 @@ const deleteEmployee = () => {
         choices: employeeNames,
       })
       .then((userChoice) => {
-        //gets the id of the department based on the user selection
+        //gets the id of the employee based on the user selection
         employees.forEach((employee) => {
-          if (employee.full_name.includes(userChoice.emp)) {
+          if (employee.full_name === userChoice.emp) {
             userChoice.emp = employee.id;
           }
         });
@@ -264,7 +315,7 @@ const deleteRole = () => {
       .then((userChoice) => {
         //gets the id of the department based on the user selection
         roles.forEach((role) => {
-          if (role.title.includes(userChoice.role)) {
+          if (role.title === userChoice.role) {
             userChoice.role = role.id;
           }
         });
@@ -311,7 +362,7 @@ const deleteDept = () => {
       .then((userChoice) => {
         //gets the id of the department based on the user selection
         departments.forEach((department) => {
-          if (department.name.includes(userChoice.dept)) {
+          if (department.name === userChoice.dept) {
             userChoice.dept = department.id;
           }
         });
@@ -394,7 +445,7 @@ const empAspect = (userSelectedEmp, employees) => {
 // ---------------------------------------------------------------------------------
 const empManager = (userSelectedEmp) => {
   let employees = [];
-  let employeeNames = [];
+  let employeeNames = ["None"];
 
   // slecting all employees to use in inquirer prompt
   let queryEmp =
@@ -414,14 +465,17 @@ const empManager = (userSelectedEmp) => {
       .then((userChoice) => {
         //gets the id of the manager based on the user selection
         employees.forEach((employee) => {
-          if (employee.full_name.includes(userChoice.newManager)) {
+          if (employee.full_name === userChoice.newManager) {
             userSelectedManager = employee.employee_id;
+          }
+          else if (userChoice.newManager === "None") {
+            userSelectedManager = null
           }
         });
 
         //gets the id of the manager based on the user selection
         employees.forEach((employee) => {
-          if (employee.full_name.includes(userSelectedEmp)) {
+          if (employee.full_name === userSelectedEmp) {
             userSelectedEmpId = employee.employee_id;
           }
         });
@@ -459,7 +513,7 @@ const empRole = (userSelectedEmp, employees) => {
 
   //gets the role of the employee based on the user selection
   employees.forEach((employee) => {
-    if (employee.full_name.includes(userSelectedEmp)) {
+    if (employee.full_name === userSelectedEmp) {
       userSelectedEmpRole = employee.role;
       userSelectedEmpId = employee.id;
     }
@@ -483,7 +537,7 @@ const empRole = (userSelectedEmp, employees) => {
       .then((userChoice) => {
         //gets the id of the role based on the user selection
         roles.forEach((role) => {
-          if (role.title.includes(userChoice.newRole)) {
+          if (role.title === userChoice.newRole) {
             userSelectedRole = role.id;
           }
         });
@@ -678,7 +732,7 @@ const addEmployee = () => {
 
           //gets the id of the manager based on the user selection
           employees.forEach((employee) => {
-            if (employee.full_name.includes(userAnswer.empManager)) {
+            if (employee.full_name === userAnswer.empManager) {
               userAnswer.empManager = employee.employee_id;
             } else if (userAnswer.empManager === "None") {
               userAnswer.empManager = null;
