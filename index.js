@@ -521,7 +521,7 @@ const addEmployee = () => {
   let employees = [];
   let employeeNames = ["None"];
 
-  // slecting all roles to use in inquirer prompt
+  // selecting  all roles to use in inquirer prompt
   let queryRole = "SELECT title FROM role";
   connection.query(queryRole, (err, res) => {
     for (var i = 0; i < res.length; i++) {
@@ -566,7 +566,7 @@ const addEmployee = () => {
       {
         name: "empManager",
         type: "list",
-        message: "Who is this employees manager?",
+        message: "Who is this employee's manager?",
         choices: employeeNames,
       },
     ])
