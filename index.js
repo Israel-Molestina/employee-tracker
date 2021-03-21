@@ -41,6 +41,7 @@ const runQuestions = () => {
         "Delete role",
         "Remove employee",
         "View employees by manager",
+        "View employees by department",
       ],
     })
     //switch cases for every possible action
@@ -89,12 +90,56 @@ const runQuestions = () => {
         case "View employees by manager":
           viewEmpByManager();
           break;
+
+        case "View employees by department":
+          viewEmpByDept();
+          break;
       }
     });
 };
 
 //----------------------------------------------------------------------------------
-// ---------------------SHOW EMPLOYEE BY MANAGER (CHOOSING MANAGER)--------------------
+// ---------------------SHOW EMPLOYEE BY DEPARTMENT------------------------------------
+// ---------------------------------------------------------------------------------
+const viewEmpByDept = () => {
+  let deptNames = [];
+  let departments = [];
+
+  // slecting all department departmnets
+  let queryDept = "SELECT department_id AS id, name FROM department;";
+  connection.query(queryDept, (err, res) => {
+    for (var i = 0; i < res.length; i++) {
+      deptNames.push(res[i].name);
+      departments.push(res[i]);
+    }
+
+    inquirer
+      .prompt({
+        name: "dept",
+        type: "list",
+        message: "Which department's employees would you like to view?",
+        choices: deptNames,
+      })
+      .then((userChoice) => {
+        //gets the id of the manager based on the user selection
+        departments.forEach((department) => {
+          if (department.name.includes(userChoice.dept)) {
+            userChoice.dept = department.id;
+          }
+        });
+
+        // shows all employees with a department id matching the department selected
+        let query = `SELECT employee.employee_id AS id, CONCAT(employee.first_name, ' ', employee.last_name) AS employee, role.title AS role, CONCAT(manager.first_name, ' ', manager.last_name) AS manager, role.salary AS salary FROM employee LEFT JOIN role ON employee.role_id = role.role_id LEFT JOIN employee manager ON employee.manager_id = manager.employee_id LEFT JOIN department ON role.department_id = department.department_id WHERE role.department_id = ${userChoice.dept};`;
+        connection.query(query, (err, res) => {
+          console.table(res);
+          runQuestions();
+        });
+      });
+  });
+};
+
+//----------------------------------------------------------------------------------
+// ---------------------SHOW EMPLOYEE BY MANAGER------------------------------------
 // ---------------------------------------------------------------------------------
 const viewEmpByManager = () => {
   let managerIds = [];
@@ -113,7 +158,7 @@ const viewEmpByManager = () => {
 
     let managerNames = [];
 
-    // slecting the managers based on the manager numbers
+    // slecting the managers based on the manager id's
     let queryMan = `SELECT CONCAT(first_name, ' ', last_name) AS full_name FROM employee WHERE employee_id IN (${managerIds});`;
     connection.query(queryMan, (err, res) => {
       for (var i = 0; i < res.length; i++) {
@@ -128,18 +173,19 @@ const viewEmpByManager = () => {
           choices: managerNames,
         })
         .then((userChoice) => {
-
-          //gets the id of the department based on the user selection
+          //gets the id of the manager based on the user selection
           employees.forEach((employee) => {
             if (employee.full_name.includes(userChoice.manager)) {
               userChoice.manager = employee.employee_id;
             }
           });
 
+          // shows all employees with a manager id matching the manager employee_id
           let query = `SELECT employee.employee_id AS id, CONCAT(employee.first_name, ' ', employee.last_name) AS employee, role.title AS role, department.name AS department, role.salary AS salary FROM employee LEFT JOIN role ON employee.role_id = role.role_id LEFT JOIN employee manager ON employee.manager_id = manager.employee_id LEFT JOIN department ON role.department_id = department.department_id WHERE employee.manager_id = ${userChoice.manager};`;
           connection.query(query, (err, res) => {
-            console.table(res)
-          })
+            console.table(res);
+            runQuestions();
+          });
         });
     });
   });
