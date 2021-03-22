@@ -34,7 +34,9 @@ npm i inquirer, npm i mysql, npm i dotenv, npm console.table
 
 ## Usage
 
-Using Employee Tacker is simply. Once you have all the dependencies installed, run the command npm start. This will prompt you with a list of actions to choose from such as view all employees, update employees and many more. 
+Using Employee Tacker is simply. Once you have all the dependencies installed, run the command npm start. This will prompt you with a list of actions to choose from such as view all employees, update employees and many more. Below is a link to the walkthrough video. 
+
+[Walkthrough](https://drive.google.com/file/d/17qbqnyEaHp6kJ0NBqMoLUqzvzPzH7NJF/view)
 
 ## License 
 

@@ -30,6 +30,7 @@ const runQuestions = () => {
       type: "list",
       message: "What would you like to do?",
       choices: [
+        "Exit",
         "View all departments",
         "View all roles",
         "View all employees",
@@ -49,6 +50,10 @@ const runQuestions = () => {
     //switch cases for every possible action
     .then((userChoice) => {
       switch (userChoice.action) {
+        case "Exit":
+          exit();
+          break;
+
         case "View all departments":
           showDepts();
           break;
@@ -112,7 +117,15 @@ const runQuestions = () => {
 
 
 //----------------------------------------------------------------------------------
-// ---------------------SHOW SALARY BY DEPARTMENT---------------------------------
+// ---------------------EXIT--------------------------------------------------------
+// ---------------------------------------------------------------------------------
+const exit = () => {
+  connection.end();
+}
+
+
+//----------------------------------------------------------------------------------
+// ---------------------SHOW SALARY BY DEPARTMENT-----------------------------------
 // ---------------------------------------------------------------------------------
 const viewSalaryByDept = () => {
   let deptNames = [];
